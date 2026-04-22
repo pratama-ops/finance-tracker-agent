@@ -22,7 +22,7 @@ export function exportToCSV(transaction) {
     .join('\n');
 
     //mengubah string csv jadi file dan bikin url temporary untuk download
-    const blob = new blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
 
     //bikin link download dan trigger klik otomatis
