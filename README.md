@@ -1,72 +1,205 @@
 # Finance Agent
-AI-powered personal finance tracker that understands natural language input.
 
-__Overview__ • __Tech Stack__ • __Project Structure__ • __Development__
+AI-powered personal finance tracker yang memahami input bahasa natural Indonesia.
+
+**Overview** • **Tech Stack** • **Project Structure** • **Development**
+
+---
 
 ## Overview
-Finance Agent adalah tools keuangan pribadi berbasis AI yang memungkinkan kamu mencatat pemasukan dan pengeluaran menggunakan kalimat bebas bahasa Indonesia. Cukup ketik seperti *"masukkan 50rb pemasukan dari freelance"* atau *"keluar 25000 buat makan siang"*, dan agent akan otomatis memparsing, mencatat, dan menampilkannya dalam tabel yang rapi.
 
-Data tersimpan di localStorage sehingga tidak hilang saat halaman di-refresh, dan bisa diekspor ke CSV kapan saja.
+Finance Agent adalah tools keuangan pribadi berbasis AI yang memungkinkan kamu mencatat pemasukan dan pengeluaran menggunakan kalimat bebas.
+
+Contoh:
+
+* *"terima uang jajan 15000"*
+* *"bayar makan 25rb"*
+
+Aplikasi akan:
+
+* Memproses input menggunakan AI (Groq + Llama 3)
+* Mengekstrak data transaksi
+* Menyimpan ke localStorage
+* Menampilkan dalam tabel & summary
+
+⚠️ Sekarang menggunakan **backend Express** untuk menjaga keamanan API key.
+
+---
 
 ## Tech Stack
-- **HTML5** - Semantic markup
-- **CSS3** - Custom styles dengan CSS variables
-- **JavaScript (ES Modules)** - Vanilla JS tanpa framework
-- **Ollama** - Local LLM runner untuk menjalankan model AI secara offline
-- **llama3.2** - Model AI yang digunakan untuk parsing natural language
-- **External Dependencies:**
-  - Google Fonts (Cormorant Garamond, Inter)
+
+### Frontend
+
+* HTML5
+* CSS3
+* JavaScript (Vanilla ES Modules)
+
+### Backend
+
+* Node.js
+* Express.js
+* dotenv
+* cors
+
+### AI
+
+* Groq API
+* Llama 3.1 8B Instant
+
+---
 
 ## Project Structure
 
+```
+finance-agent/
+├── server.js              ← backend (API & AI processing)
+├── .env                   ← API key (tidak di-commit)
+├── package.json
+├── src/
+│   └── tools/
+│       ├── storage.js     ← localStorage logic
+│       └── export.js      ← export CSV
+├── views/
+│   └── index.html
+├── style.css
+└── app.js                ← frontend logic (UI & fetch API)
+```
+
+---
+
 ## Features
-- **Natural Language Input** — Input transaksi pakai kalimat bebas bahasa Indonesia
-- **Auto Parsing** — Agent otomatis ekstrak nominal, kategori, dan tipe transaksi
-- **Summary Cards** — Ringkasan total pemasukan, pengeluaran, dan saldo
-- **Persistent Storage** — Data tersimpan di localStorage, tidak hilang saat refresh
-- **Export CSV** — Export semua transaksi ke file CSV dengan satu klik
-- **Responsive** — Tampilan menyesuaikan di desktop maupun mobile
-- **Offline** — Berjalan sepenuhnya lokal, tidak perlu koneksi internet setelah setup
+
+* **Natural Language Input**
+  Input transaksi dengan bahasa bebas
+
+* **AI Parsing (Backend)**
+  Parsing dilakukan di server (lebih aman)
+
+* **Accurate Amount Handling**
+  Nominal diambil langsung dari input (anti halusinasi AI)
+
+* **Summary Dashboard**
+  Total pemasukan, pengeluaran, dan saldo
+
+* **Persistent Storage**
+  Data disimpan di localStorage
+
+* **Delete Transaction**
+  Hapus transaksi dengan satu klik
+
+* **Export CSV**
+  Download data transaksi
+
+---
 
 ## Development
 
-> [!TIP]
-> Pastikan Ollama sudah terinstall dan berjalan sebelum membuka aplikasi.
+### 1. Clone & Install
 
-### Setup
-
-1. Install Ollama
 ```bash
-curl -fsSL https://ollama.com/install.sh | sh
+npm install
 ```
 
-2. Pull model
-```bash
-ollama pull llama3.2
+---
+
+### 2. Setup Environment Variable
+
+Buat file `.env`:
+
+```env
+GROQ_API_KEY=API_KEY_KAMU
 ```
 
-3. Jalankan Ollama dengan CORS diizinkan
+⚠️ Jangan commit file ini ke GitHub
+
+---
+
+### 3. Jalankan Backend
+
 ```bash
-OLLAMA_ORIGINS=* ollama serve
+npm run dev
 ```
 
-4. Buka `views/index.html` menggunakan Live Server di VS Code atau:
+atau
+
+```bash
+node server.js
+```
+
+Server akan berjalan di:
+
+```
+http://localhost:3000
+```
+
+---
+
+### 4. Jalankan Frontend
+
+Gunakan Live Server (VS Code)
+atau:
+
 ```bash
 npx serve .
 ```
-Lalu akses `http://localhost:3000/views/index.html`
 
-### Contoh Input
-| Input | Hasil |
-|---|---|
-| `masukkan 50rb pemasukan freelance` | income • Rp 50.000 • Freelance |
-| `keluar 25000 buat makan siang` | expense • Rp 25.000 • Makan |
-| `bayar listrik 150k` | expense • Rp 150.000 • Utilitas |
+Akses:
 
-### Browser Support
+```
+http://127.0.0.1:5500
+```
+
+---
+
+## API Endpoint
+
+### POST `/api/agent`
+
+Request:
+
+```json
+{
+  "input": "beli kopi 15000"
+}
+```
+
+Response:
+
+```json
+{
+  "valid": true,
+  "type": "expense",
+  "amount": 15000,
+  "category": "Makanan",
+  "description": "beli kopi"
+}
+```
+
+---
+
+## Contoh Input
+
+| Input                     | Output               |
+| ------------------------- | -------------------- |
+| `terima uang jajan 15000` | income • Rp 15.000   |
+| `beli makan 25rb`         | expense • Rp 25.000  |
+| `bayar listrik 150k`      | expense • Rp 150.000 |
+
+---
+
+## Catatan Penting
+
+* API key **tidak disimpan di frontend**
+* Semua request AI melalui backend
+* Gunakan `.env` untuk keamanan
+
+---
+
+## Browser Support
+
 | Browser | Status |
-|---|---|
-| Chrome | Latest |
+| ------- | ------ |
+| Chrome  | Latest |
 | Firefox | Latest |
-| Safari | Latest |
-| Edge | Latest |
+| Safari  | Latest |
+| Edge    | Latest |

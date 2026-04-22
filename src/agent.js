@@ -1,8 +1,7 @@
-import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai@0.15.0";
 import { validateParsed, buildTransaction } from './tools/parser.js';
+import 'dotenv/config';
 
-const genAI = new GoogleGenerativeAI('AIzaSyCe28xmhp8pEoulZLPwFf2Z_NZm1MIN03c');
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
 const SYSTEM_PROMPT = `Kamu adalah parser transaksi keuangan.
 User akan input kalimat bebas bahasa Indonesia.
@@ -14,16 +13,43 @@ Return HANYA JSON dengan format:
   "category": string singkat,
   "description": string
 }
-Jika bukan transaksi keuangan, return { "valid": false }.`;
+
+Aturan menentukan type:
+- "income" = uang MASUK ke kamu (terima pembayaran, dp, gaji, bonus, transfer masuk)
+- "expense" = uang KELUAR dari kamu (beli sesuatu, bayar sesuatu, transfer keluar)
+
+Contoh:
+- "terima dp projek 500rb" → type: "income"
+- "beli kopi 15000" → type: "expense"
+- "client transfer 2jt" → type: "income"
+- "bayar hosting 100rb" → type: "expense"
+
+Jika bukan transaksi keuangan, return { "valid": false }.
+Jangan tambahkan teks apapun selain JSON.`;
 
 export async function runAgent(userInput) {
-    const prompt = `${SYSTEM_PROMPT}\n\nInput user: "${userInput}"`;
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
-    const clean = text.replace(/```json|```/g, '').trim();
-    const parse = JSON.parse(clean);
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${GROQ_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: 'llama-3.1-8b-instant',
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: userInput },
+      ],
+    }),
+  });
 
-    if(!validateParsed(parse)) return null;
+  const data = await response.json();
+  console.log(data);
+  const rawText = data.choices[0].message.content;
+  const clean = rawText.replace(/```json|```/g, '').trim();
+  const parsed = JSON.parse(clean);
 
-    return buildTransaction(parse);
+  if (!validateParsed(parsed)) return null;
+
+  return buildTransaction(parsed);
 }

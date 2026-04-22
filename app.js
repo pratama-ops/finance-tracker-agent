@@ -1,4 +1,3 @@
-import { runAgent } from './src/agent.js';
 import { saveTransaction, getTransactions, deleteTransaction } from './src/tools/storage.js';
 import { exportToCSV } from './src/tools/export.js';
 
@@ -21,15 +20,31 @@ async function handleInput() {
   if (!userText) return;
 
   setStatus('Memproses...');
-  const transaction = await runAgent(userText);
 
-  if (transaction) {
-    saveTransaction(transaction);
-    renderTable();
-    renderSummary();
-    setStatus('Transaksi berhasil ditambahkan.');
-  } else {
-    setStatus('Input tidak dikenali.');
+  try {
+    const res = await fetch('http://localhost:3000/api/agent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ input: userText }),
+    });
+
+    const parsed = await res.json();
+
+    const transaction = parsed.valid ? parsed : null;
+
+    if (transaction) {
+      transaction.date = new Date().toISOString().split('T')[0];
+      transaction.id = Date.now().toString();
+      saveTransaction(transaction);
+      renderTable();
+      renderSummary();
+      setStatus('Transaksi berhasil ditambahkan.');
+    } else {
+      setStatus('Input tidak dikenali.');
+    }
+  } catch (err) {
+    console.error(err);
+    setStatus('Terjadi error.');
   }
 
   input.value = '';
