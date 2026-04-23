@@ -22,7 +22,8 @@ async function handleInput() {
   setStatus('Memproses...');
 
   try {
-    const res = await fetch('http://localhost:3000/api/agent', {
+    const BASE_URL = 'https://finance-tracker-agent-production.up.railway.app';
+    const res = await fetch(`${BASE_URL}/api/agent`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ input: userText }),
